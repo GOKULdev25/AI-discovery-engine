@@ -1,0 +1,31 @@
+# Mirrors backend/pyproject.toml's [project].dependencies. Render's native
+# Python runtime installs from this file; `pip install -e .` against the
+# pyproject works identically for local development.
+#
+# playwright is installed but its *browsers* are not (no `playwright
+# install` step) — the package has to import cleanly because
+# connectors/registry.py imports the Lane 2 sites unconditionally, but on a
+# host with BROWSER_LANE_ENABLED=false no browser is ever launched (A§14).
+fastapi>=0.115
+uvicorn[standard]>=0.32
+pydantic>=2.9
+pydantic-settings>=2.6
+sse-starlette>=2.1
+aiosqlite>=0.20
+duckdb>=1.1
+httpx>=0.27
+tenacity>=9.0
+PyYAML>=6.0
+python-multipart>=0.0.12
+google-play-scraper>=1.2.7
+asyncpraw>=7.7
+polars>=1.9
+xlsxwriter>=3.2
+pyarrow>=17.0
+fastembed>=0.8
+langdetect>=1.0.9
+vaderSentiment>=3.3
+simhash>=2.1
+playwright>=1.62
+selectolax>=0.4
+mcp>=1.29,<2

@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "PowerShell($p=\"e:\\\\AI discovery Engine\\\\.claude\"; if \\(Test-Path $p\\) { Get-ChildItem -Force -Recurse -Name $p } else { Write-Output \"NO .claude dir\" }; Write-Output \"---user settings---\"; $u=\"$env:USERPROFILE\\\\.claude\\\\settings.json\"; if \\(Test-Path $u\\) { Get-Content $u -Raw } else { Write-Output \"no user settings.json\" })"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/scripts/eval-hook.sh\"",
+            "timeout": 180,
+            "statusMessage": "Running phase eval suite..."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+.env
+.env.local
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+data/
+!data/.gitkeep
+node_modules/
+.next/
+frontend/.next/
+evals/reports/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.duckdb
+.claude/.eval-signature
+
+# Render API key — read by scripts/render.sh so deploys and log reads can
+# run without a dashboard. Never committed.
+.render-key
+
+# Timestamped working copies from in-place refactors. Local safety nets,
+# not history — git is the history.
+*.backup-*/
+
+# Next.js incremental build cache
+tsconfig.tsbuildinfo

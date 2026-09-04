@@ -1,0 +1,117 @@
+# Render Blueprint — AI Discovery Engine
+#
+# Deploys the two halves the architecture already separates (A§14.1 rule 4:
+# the frontend reaches the backend over HTTP + SSE only, so relocating
+# either is an environment variable, not a migration).
+#
+# WHAT THIS DEPLOYMENT DELIBERATELY GIVES UP, and why it is a configuration
+# choice rather than a defect:
+#
+#   * NO PERSISTENCE. Render's free plan has no disk. `ops.sqlite`,
+#     `warehouse.duckdb`, the app-level quota ledger and the LLM cache all
+#     live on an ephemeral filesystem and are erased by every deploy and
+#     every idle spin-down. A§7's longitudinal project — the whole reason
+#     projects exist rather than a `tag` column — does not survive here.
+#     See the `disk:` block below to turn that back on.
+#
+#   * NO BROWSER LANE. A§14 states Lane 2 never moves to a free cloud host:
+#     it needs a real desktop Chrome with a persistent profile. Flipkart,
+#     Amazon and Myntra links therefore fail with a typed, explained
+#     UNSUPPORTED_SOURCE instead of hanging (A§8.1). Lane 1 — which A§2.2
+#     says carries essentially all the volume — is unaffected.
+#
+#   * NO LOCAL EMBEDDINGS. bge-small under onnxruntime does not fit beside
+#     duckdb and polars in 512MB. Chat retrieval degrades to the BM25 half
+#     of A§12's hybrid, and gate stage 2 abstains, so more documents reach
+#     the LLM. That is a cost change, visible on GET /quota — not a silent
+#     quality change.
+#
+# Free instances also spin down after ~15 minutes idle and cold-start in
+# roughly a minute. A long batch outliving that window resumes from its
+# checkpoint on the next request (A§10.3) rather than restarting — but only
+# if the filesystem it checkpointed to still exists, which on this plan it
+# does not. Treat this deployment as a live demo of a local-first tool.
+
+services:
+  - type: web
+    name: ade-api
+    runtime: python
+    plan: free
+    region: singapore
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.9"
+
+      # Ephemeral on this plan. To make it durable: upgrade the service to
+      # Starter, uncomment the `disk:` block at the bottom of this service,
+      # and set DATA_ROOT to the mount path.
+      - key: DATA_ROOT
+        value: ./data
+
+      # See the header. Both default True in config.py so local runs and
+      # the eval suite are unchanged; only this host degrades.
+      - key: BROWSER_LANE_ENABLED
+        value: "false"
+      - key: EMBEDDINGS_ENABLED
+        value: "false"
+
+      # 0.1 CPU on the free plan — four workers would contend, not
+      # parallelise. The per-source ceilings in A§10.2 are unchanged;
+      # this is the size of the pool that draws on them.
+      - key: WORKER_COUNT
+        value: "2"
+
+      # Set after the first deploy, once Render has assigned both
+      # hostnames: CORS_ORIGINS is a JSON array (pydantic-settings parses
+      # it as list[str]), e.g. ["https://ade-web.onrender.com"]
+      - key: CORS_ORIGINS
+        sync: false
+      - key: API_BASE_URL
+        sync: false
+
+      # Provider credentials (Phase -1). Never in this file — set in the
+      # Render dashboard or via the API; `sync: false` means the blueprint
+      # declares the variable without carrying a value into version control.
+      - key: YOUTUBE_API_KEY
+        sync: false
+      - key: REDDIT_CLIENT_ID
+        sync: false
+      - key: REDDIT_CLIENT_SECRET
+        sync: false
+      - key: REDDIT_USER_AGENT
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+
+    # Uncomment together with `plan: starter` above to get durable storage.
+    # Then set DATA_ROOT=/var/data. Render disks attach to exactly one
+    # instance, which suits a single-operator tool (P§5) precisely.
+    # disk:
+    #   name: ade-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+
+  - type: web
+    name: ade-web
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: frontend
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start --port $PORT
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22.11.0"
+      # NEXT_PUBLIC_* is inlined at build time, so changing this requires a
+      # rebuild, not just a restart. Set to the ade-api hostname Render
+      # actually assigns.
+      - key: NEXT_PUBLIC_API_BASE_URL
+        sync: false

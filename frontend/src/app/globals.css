@@ -1,0 +1,267 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Theme switching
+   ---------------------------------------------------------------------------
+   `data-theme` is written onto <html> before first paint by the inline script
+   in layout.tsx, so there is never a flash of the wrong theme. Every colour
+   below is a semantic token exposed through `@theme inline` — components never
+   name a raw colour, which is what makes one palette edit re-theme the whole
+   app (and what makes dark mode actually work, rather than a black page full
+   of white cards).
+--------------------------------------------------------------------------- */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  /* Surfaces — page sits below cards; sunken is for inset regions (the chat
+     transcript, code/paste areas) so depth reads without heavy borders. */
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f1f3f6;
+  --surface-hover: #f4f6f9;
+
+  --line: #e3e6eb;
+  --line-strong: #cbd1da;
+
+  /* Text — three steps is enough hierarchy; more invites inconsistency. */
+  --fg: #11151c;
+  --fg-muted: #596273;
+  /* Measured, not eyeballed: at #8a92a3 this hit only 3.12:1 on white, and it
+     carries 11–12px table headers, hints and metadata — exactly the text AA
+     protects. #646b7a clears 4.5:1 on every surface it lands on (5.35 on the
+     card, 5.03 on the page, 4.75 on the tinted accent row). */
+  --fg-subtle: #646b7a;
+
+  /* One accent. Restraint is the point: colour in this product should almost
+     always mean "this datum has a status", not "this is a UI chrome element". */
+  --accent: #3b5bdb;
+  --accent-hover: #3350c4;
+  --accent-fg: #ffffff;
+  --accent-soft: #eef1fd;
+  --accent-line: #c3cdf7;
+
+  /* Status roles. `danger` carries real product meaning here — "fail loudly"
+     (P§8) means a failed link must be impossible to miss. */
+  --success: #0f7b3f;
+  --success-soft: #e6f4ec;
+  --success-line: #b8dfc9;
+  --warn: #a1620a;
+  --warn-soft: #fdf3e2;
+  --warn-line: #efd8ac;
+  --danger: #c02626;
+  --danger-fg: #ffffff;
+  --danger-soft: #fdeceb;
+  --danger-line: #f3c2be;
+  --info: #0b6b96;
+  --info-soft: #e6f2f8;
+  --info-line: #b6d9e9;
+
+  --ring: #3b5bdb;
+
+  /* Per-source chart colours: a validated 8-slot categorical palette, one
+     fixed slot per source, never cycled. Verified with the data-viz
+     validator on the adjacent pairlist (stacks/bars/legends) — worst
+     normal-vision ΔE 19.6, worst CVD ΔE 9.1, both modes passing.
+
+     The earlier hand-picked brand hues did not pass: `llm_dom` and `fixture`
+     were two near-identical greys (ΔE 4.1 — indistinguishable even with
+     full colour vision), and YouTube-red sat too close to Reddit-orange.
+
+     Three light slots land under 3:1 on white, so every chart using them
+     ships visible labels or a value list alongside (the "relief" rule) —
+     colour is never the only channel carrying identity here. */
+  --src-appstore: #2a78d6;  /* slot 1 · blue    */
+  --src-reddit: #eb6834;    /* slot 2 · orange  */
+  --src-playstore: #1baf7a; /* slot 3 · aqua    */
+  --src-amazon: #eda100;    /* slot 4 · yellow  */
+  --src-myntra: #e87ba4;    /* slot 5 · magenta */
+  --src-llm-dom: #008300;   /* slot 6 · green   */
+  --src-flipkart: #4a3aa7;  /* slot 7 · violet  */
+  --src-youtube: #e34948;   /* slot 8 · red     */
+  /* Deliberately achromatic and outside the categorical set: `fixture` is
+     the test connector, never real collected data, and should never read as
+     just another source. */
+  --src-fixture: #9a9a97;
+
+  /* Sentiment is diverging, not categorical: two poles either side of a
+     neutral grey midpoint. `unknown` is greyer still — absence, not a value. */
+  --sent-positive: #1baf7a;
+  --sent-neutral: #9aa3b2;
+  --sent-negative: #e34948;
+  --sent-unknown: #d4d8de;
+
+  --shadow-card: 0 1px 2px rgb(16 21 28 / 0.04), 0 1px 3px rgb(16 21 28 / 0.06);
+  --shadow-pop: 0 8px 24px -6px rgb(16 21 28 / 0.16), 0 2px 6px rgb(16 21 28 / 0.08);
+}
+
+[data-theme="dark"] {
+  --bg: #0b0d11;
+  --surface: #14171d;
+  --surface-raised: #1b1f27;
+  --surface-sunken: #0e1116;
+  --surface-hover: #1a1e26;
+
+  --line: #262b34;
+  --line-strong: #39404c;
+
+  --fg: #e8eaee;
+  --fg-muted: #9ba3b2;
+  /* Same fix in the other direction: #6b7383 measured 3.76:1 on the card. */
+  --fg-subtle: #868e9e;
+
+  --accent: #7d94f8;
+  --accent-hover: #93a6fa;
+  --accent-fg: #0b0d11;
+  --accent-soft: #191f36;
+  --accent-line: #313c66;
+
+  --success: #4ec37f;
+  --success-soft: #10241a;
+  --success-line: #1d4531;
+  --warn: #e0a54a;
+  --warn-soft: #251b0c;
+  --warn-line: #4a3818;
+  --danger: #f0736b;
+  /* Dark-mode `--danger` is a *light* red, so white-on-it measured 2.85:1.
+     Near-black gives 6.82:1 on the same fill. */
+  --danger-fg: #0b0d11;
+  --danger-soft: #2a1514;
+  --danger-line: #542623;
+  --info: #5cb3dd;
+  --info-soft: #0d2029;
+  --info-line: #1c3f4f;
+
+  --ring: #7d94f8;
+
+  /* The same eight hues re-stepped for a dark ground and validated as a set
+     against it — not an automatic lightening of the light values. All eight
+     clear 3:1 here, so the light mode's "relief" caveat doesn't apply. */
+  --src-appstore: #3987e5;
+  --src-reddit: #d95926;
+  --src-playstore: #199e70;
+  --src-amazon: #c98500;
+  --src-myntra: #d55181;
+  --src-llm-dom: #008300;
+  --src-flipkart: #9085e9;
+  --src-youtube: #e66767;
+  --src-fixture: #6f6f6c;
+
+  --sent-positive: #199e70;
+  --sent-neutral: #8b93a3;
+  --sent-negative: #e66767;
+  --sent-unknown: #3a4049;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 3px rgb(0 0 0 / 0.3);
+  --shadow-pop: 0 10px 30px -8px rgb(0 0 0 / 0.6), 0 2px 8px rgb(0 0 0 / 0.4);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-hover: var(--surface-hover);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-line: var(--success-line);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-warn-line: var(--warn-line);
+  --color-danger: var(--danger);
+  --color-danger-fg: var(--danger-fg);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-line: var(--info-line);
+
+  --color-ring: var(--ring);
+
+  /* Geist is loaded in layout.tsx. It previously never rendered: a
+     `body { font-family: Arial }` rule further down this file overrode it. */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+}
+
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  /* Tabular figures everywhere a count, rating, or date is shown — numbers
+     that change on a live SSE tick must not reflow the row they sit in. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--fg);
+  }
+
+  ::placeholder {
+    color: var(--fg-subtle);
+  }
+
+  /* Recharts injects its own focus outline on every bar/segment; ours is
+     better and consistent, so suppress theirs rather than fight specificity. */
+  .recharts-wrapper svg:focus,
+  .recharts-surface:focus {
+    outline: none;
+  }
+}
+
+@layer utilities {
+  /* Honour the OS setting rather than assuming motion is welcome. Scoped as a
+     utility layer rule so it beats component-level transition classes. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
